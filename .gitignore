@@ -1,4 +1,4 @@
 ./apps
 ./data
-./Spark3/jars/
+./Spark3/jars/*
 .env
