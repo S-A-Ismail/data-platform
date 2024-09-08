@@ -1,0 +1,24 @@
+<configuration>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:postgresql://192.168.137.10:5432/metastore</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>postgres</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>1010</value>
+    </property>
+    <property>
+        <name>hive.metastore.uris</name>
+        <!-- hostname must point to the Hive metastore URI in your cluster -->
+        <value>thrift://192.168.137.10:9083</value>
+    <description>URI for client to contact metastore server</description>
+    </property>
+</configuration>

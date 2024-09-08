@@ -1,0 +1,72 @@
+FROM openjdk:16-slim
+
+WORKDIR '/opt/'
+
+ARG SPARK_VERSION=3.5.2 
+ARG HADOOP_VERSION=3.3.0 
+ARG POSTGRES_CONNECTOR_VERSION=42.2.18
+
+RUN mkdir /opt/hadoop && \
+    mkdir /opt/spark && \ 
+    mkdir /opt/livy && \
+    mkdir /opt/jupyter
+
+ENV PATH="/opt/spark/bin:/opt/hadoop/bin:${PATH}"
+ENV DATABASE_DRIVER=org.postgresql.Driver
+ENV DATABASE_TYPE=postgres
+ENV DATABASE_TYPE_JDBC=postgresql
+ENV DATABASE_PORT=5432
+
+ENV SPARK_MASTER_PORT=7077 \
+    SPARK_MASTER_WEBUI_PORT=8080 \
+    SPARK_LOG_DIR=/opt/spark/logs \
+    SPARK_MASTER_LOG=/opt/spark/logs/spark-master.out \
+    SPARK_WORKER_LOG=/opt/spark/logs/spark-worker.out \
+    SPARK_WORKER_WEBUI_PORT=8080 \
+    SPARK_WORKER_PORT=7000
+
+RUN \
+echo "Install OS dependencies" && \
+      build_deps="curl" && \
+      apt-get update -y && \
+      apt-get install -y $build_deps net-tools --no-install-recommends && \
+      apt-get install -y procps
+RUN \
+    echo "Install Python" && \
+    apt install -y python3 python3-pip
+RUN \    
+    echo "Install Hadoop" && \
+    curl --output-dir /opt/ -O https://archive.apache.org/dist/hadoop/core/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
+    && tar xvf /opt/hadoop-${HADOOP_VERSION}.tar.gz && \
+    cp -rf /opt/hadoop-${HADOOP_VERSION}/* /opt/hadoop/ && \
+    rm -rf /opt/hadoop-${HADOOP_VERSION}.tar.gz /opt/hadoop-${HADOOP_VERSION}
+
+RUN \
+    echo "Install Spark" && \
+    curl --output-dir /opt/ -O https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz \
+    && tar xvf /opt/spark-${SPARK_VERSION}-bin-hadoop3.tgz && \
+    cp -rf /opt/spark-${SPARK_VERSION}-bin-hadoop3/* /opt/spark/ && \
+    rm -rf /opt/spark-${SPARK_VERSION}-bin-hadoop3.tgz /opt/spark-${SPARK_VERSION}-bin-hadoop3
+
+RUN \
+echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc \
+&& echo "export PATH=$PATH" >> ~/.bashrc \
+&& mkdir /opt/spark/logs
+
+RUN \ 
+    echo "Purge build artifacts" && \
+    apt-get purge -y --auto-remove $build_deps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY ./Spark3/jars/postgresql-42.6.0.jar /opt/spark/jars/postgresql-42.6.0.jar
+COPY ./Spark3/jars/hadoop-aws-3.3.4.jar /opt/spark/jars/hadoop-aws-3.3.4.jar
+COPY ./Spark3/jars/hadoop-common-3.3.4.jar /opt/spark/jars/hadoop-common-3.3.4.jar
+COPY ./Spark3/jars/aws-java-sdk-bundle-1.12.262.jar /opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+COPY ./Spark3/jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar /opt/spark/jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar
+COPY ./Spark3/jars/iceberg-spark-runtime-3.5_2.13-1.6.1.jar /opt/spark/jars/iceberg-spark-runtime-3.5_2.13-1.6.1.jar
+COPY ./Spark3/spark-defaults.conf /opt/spark/conf/spark-defaults.conf
+COPY ./Spark3/livy.conf /opt/livy/conf/livy.conf
+COPY ./Spark3/hive-site.xml /opt/spark/conf/hive-site.xml
+COPY ./Spark3/Service-Start.sh ./Service-Start.sh 
+CMD bash ./Service-Start.sh

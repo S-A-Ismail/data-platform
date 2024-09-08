@@ -1,0 +1,60 @@
+version: "3.3"
+services:
+  spark-master:
+    image: syedismail/spark2master
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+      - "9093:8888"
+      - "8998:8998"
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+    hostname: spark
+    links:
+      - metastore
+  spark-worker-a:
+    image: syedismail/spark2worker
+    ports:
+      - "9091:8080"
+      - "7000:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=512M
+      - SPARK_DRIVER_MEMORY=512M
+      - SPARK_EXECUTOR_MEMORY=512M
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-a
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+  spark-worker-b:
+    image: syedismail/spark2worker
+    ports:
+      - "9092:8080"
+      - "7001:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=512M
+      - SPARK_DRIVER_MEMORY=512M
+      - SPARK_EXECUTOR_MEMORY=512M
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-b
+    volumes:
+        - ./apps:/opt/spark-apps
+        - ./data:/opt/spark-data
+  jupyter:
+    image: syedismail/jupyter
+    links:
+      - spark-master
+    ports:
+      - "8888:8888"
