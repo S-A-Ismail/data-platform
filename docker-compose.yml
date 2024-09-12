@@ -1,26 +1,6 @@
 version: '3.9'
 
 services:
-  localstack:
-    image: localstack/localstack
-    ports:
-      - ${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
-    environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
-    volumes:
-      - "/tmp/localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-
-  s3_setup:
-    image: localstack/localstack
-    depends_on:
-      localstack:
-        condition: service_healthy
-    entrypoint: ["aws", "--endpoint-url", "http://localstack:4566", "s3api", "create-bucket", "--bucket", "${S3_BUCKET}"]
-    environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
-
   spark:
     build:
       context: .
@@ -31,9 +11,6 @@ services:
     volumes:
        - ./Spark3/apps:/opt/spark-apps
        - ./Spark3/data:/opt/spark-data
-    #environment:
-      # - SPARK_LOCAL_IP=${SPARK_MASTER_IP}
-      # - SPARK_WORKLOAD=master
   spark-worker:
     build:
       context: .
@@ -49,8 +26,6 @@ services:
       - SPARK_WORKER_MEMORY=256M
       - SPARK_DRIVER_MEMORY=256M
       - SPARK_EXECUTOR_MEMORY=256M
-      # - SPARK_WORKLOAD=worker
-      # - SPARK_LOCAL_IP=spark-worker-a
     volumes:
        - ./apps:/opt/spark-apps
        - ./data:/opt/spark-data
